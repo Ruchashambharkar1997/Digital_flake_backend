@@ -37,16 +37,16 @@ jobs:
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+          EC2_SSH_KEY: ${{ secrets.SECRET_KEY }}
         run: |
           # Decode the SSH key from GitHub Secrets and save it to a file
           echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > ssh-key.pem
           chmod 400 ssh-key.pem
 
-     # - name: Copy SSH Key to Ubuntu Machine
-      #  run: |
-       #   # Transfer the SSH key to the remote Ubuntu machine
-        #  scp -o StrictHostKeyChecking=no -i ssh-key.pem ssh-key.pem ubuntu@13.60.43.249:/home/ubuntu/.ssh/
+      - name: Copy SSH Key to Ubuntu Machine
+        run: |
+          # Transfer the SSH key to the remote Ubuntu machine
+          scp -o StrictHostKeyChecking=no -i ssh-key.pem ssh-key.pem ubuntu@13.60.43.249:/home/ubuntu/.ssh/
 
       - name: Deploy Application
         run: |
