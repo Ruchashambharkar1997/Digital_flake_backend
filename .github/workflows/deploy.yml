@@ -25,9 +25,9 @@ jobs:
           npm install
 
       # Step 4: Build app (if required)
-      - name: Build app
-        run: |
-          npm run build
+      #- name: Build app
+       # run: |
+        #  npm run build
 
       # Step 5: Deploy to AWS
       - name: Deploy to EC2
