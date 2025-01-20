@@ -1,49 +1,55 @@
 name: Deploy on AWS
+
 on:
-  push: 
-    branches: 
-      - main 
+  push:
+    branches:
+      - main
 
-jobs: 
+jobs:
   deploy:
-    run-on: ubuntu latest
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      # Step 1: Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '16'
-        - name: Install dependencies
-      run: |
-        npm install
+      # Step 2: Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16'
 
-    - name: Build app (if required)
-      run: |
-        npm run build
-    - name: Deploy to AWS
-      env:
-        PORT: ${{ secrets.PORT }}
-        CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
-        ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
-        ACCESS_TOKEN_EXPIRY: ${{ secrets.ACCESS_TOKEN_EXPIRY }}
-        REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
-        REFRESH_TOKEN_EXPIRY: ${{ secrets.REFRESH_TOKEN_EXPIRY }}
-        CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
-        CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
-        CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
-        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+      # Step 3: Install dependencies
+      - name: Install dependencies
+        run: |
+          npm install
 
-  - name: Deploy to EC2
-  env:
-    EC2_SSH_KEY: ${{ secrets.SECRET_KEY }}
-  run: |
-    echo "${EC2_SSH_KEY}" | base64 --decode > ssh-key.pem
-    chmod 600 ssh-key.pem
-    scp -o StrictHostKeyChecking=no -i ssh-key.pem -r * ubuntu@13.60.43.249 << 'EOF'
-      cd /home/ubuntu
-      git pull origin main  # Pull the latest changes
-      npm install
-      pm2 restart all || pm2 start server.js  # Restart the app
-    EOF
+      # Step 4: Build app (if required)
+      - name: Build app
+        run: |
+          npm run build
+
+      # Step 5: Deploy to AWS
+      - name: Deploy to EC2
+        env:
+          PORT: ${{ secrets.PORT }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
+          ACCESS_TOKEN_EXPIRY: ${{ secrets.ACCESS_TOKEN_EXPIRY }}
+          REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
+          REFRESH_TOKEN_EXPIRY: ${{ secrets.REFRESH_TOKEN_EXPIRY }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          echo "${EC2_SSH_KEY}" | base64 --decode > ssh-key.pem
+          chmod 600 ssh-key.pem
+          scp -o StrictHostKeyChecking=no -i ssh-key.pem -r * ubuntu@13.60.43.249:/home/ubuntu/app
+          ssh -o StrictHostKeyChecking=no -i ssh-key.pem ubuntu@13.60.43.249 << 'EOF'
+            cd /home/ubuntu/app
+            git pull origin main
+            npm install
+            pm2 restart all || pm2 start server.js
+          EOF
