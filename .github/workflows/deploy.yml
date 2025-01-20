@@ -24,13 +24,8 @@ jobs:
         run: |
           npm install
 
-      # Step 4: Build app (if required)
-      #- name: Build app
-       # run: |
-        #  npm run build
-
       # Step 5: Deploy to AWS
-      - name: Deploy to EC2
+      - name: Set Up SSH Key
         env:
           PORT: ${{ secrets.PORT }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
@@ -42,26 +37,23 @@ jobs:
           CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          EC2_SSH_KEY: ${{ secrets.SECRET_KEY }}
-       
+          EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
+        run: |
+          # Decode the SSH key from GitHub Secrets and save it to a file
+          echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > ssh-key.pem
+          chmod 400 ssh-key.pem
 
-      name: Set Up SSH Key
-      run: |
-        # Decode the SSH key from GitHub Secrets and save it to a file
-        echo "${{ secrets.EC2_SSH_KEY }}" | base64 --decode > ssh-key.pem
-        chmod 400 ssh-key.pem
+      - name: Copy SSH Key to Ubuntu Machine
+        run: |
+          # Transfer the SSH key to the remote Ubuntu machine
+          scp -o StrictHostKeyChecking=no -i ssh-key.pem ssh-key.pem ubuntu@13.60.43.249:/home/ubuntu/.ssh/
 
-    - name: Copy SSH Key to Ubuntu Machine
-      run: |
-        # Transfer the SSH key to the remote Ubuntu machine
-        scp -o StrictHostKeyChecking=no -i ssh-key.pem ssh-key.pem ubuntu@13.60.43.249:/home/ubuntu/.ssh/
-
-    - name: Deploy Application
-      run: |
-        # SSH into the remote machine and deploy the application
-        ssh -o StrictHostKeyChecking=no -i ssh-key.pem ubuntu@13.60.43.249 << 'EOF'
-          cd /home/ubuntu/app
-          git pull origin main
-          npm install
-          pm2 restart all || pm2 start server.js
-        EOF
+      - name: Deploy Application
+        run: |
+          # SSH into the remote machine and deploy the application
+          ssh -o StrictHostKeyChecking=no -i ssh-key.pem ubuntu@13.60.43.249 << 'EOF'
+            cd /home/ubuntu/app
+            git pull origin main
+            npm install
+            pm2 restart all || pm2 start server.js
+          EOF
