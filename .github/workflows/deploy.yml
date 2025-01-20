@@ -45,7 +45,7 @@ jobs:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
         run: |
           echo "${EC2_SSH_KEY}" | base64 --decode > ssh-key.pem
-          chmod 600 ssh-key.pem
+          chmod 400 ssh-key.pem
           scp -o StrictHostKeyChecking=no -i ssh-key.pem -r * ubuntu@13.60.43.249:/home/ubuntu/app
           ssh -o StrictHostKeyChecking=no -i ssh-key.pem ubuntu@13.60.43.249 << 'EOF'
             cd /home/ubuntu/app
